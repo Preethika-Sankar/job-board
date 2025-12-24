@@ -1,0 +1,39 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: #111111; /* Dark background */
+  color: #ffffff;            /* White text */
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Code blocks */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  color: #1e90ff;
+}
+
+/* Buttons */
+button {
+  background-color: #1e90ff;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #007acc;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #1e90ff;
+  border-radius: 6px;
+}
