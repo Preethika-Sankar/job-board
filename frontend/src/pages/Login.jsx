@@ -1,61 +1,57 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-  const { register, handleSubmit } = useForm();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
-  const [loginMessage, setLoginMessage] = useState('');
-  const [messageColor, setMessageColor] = useState('');
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const API = process.env.REACT_APP_API_URL;
+
     try {
-      // ✅ Use environment variable instead of hard-coded URL
-      const API = process.env.REACT_APP_API_URL;
+      const res = await axios.post(`${API}/login`, formData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-      const res = await axios.post(
-        `${API}/login`,   // 👈 backend URL comes from .env / Vercel
-        data,
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      setMessage('Login successful ✅');
+      console.log(res.data);
 
-      localStorage.setItem('auth', true);
-      localStorage.setItem('userId', res.data.user.id);
-      localStorage.setItem('role', res.data.user.role);
+      // Save user info or token if needed
+      localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      setLoginMessage('Login successful ✅');
-      setMessageColor('green');
-
-      if (res.data.user.role === 'recruiter') {
-        navigate('/dashboard');
-      } else {
-        navigate('/jobs');
-      }
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      setLoginMessage('Login failed ❌');
-      setMessageColor('red');
+      setMessage('Login failed ❌');
     }
   };
 
   return (
     <div className="page-container">
       <h2>Login</h2>
-
-      {loginMessage && (
-        <p style={{ color: messageColor, fontWeight: 'bold' }}>{loginMessage}</p>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <label>Email</label>
-        <input {...register('email', { required: true })} />
-
-        <label>Password</label>
-        <input type="password" {...register('password', { required: true })} />
-
+      {message && <p>{message}</p>}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          value={formData.email}
+          onChange={e => setFormData({ ...formData, email: e.target.value })}
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          value={formData.password}
+          onChange={e => setFormData({ ...formData, password: e.target.value })}
+          placeholder="Password"
+          required
+        />
         <button type="submit">Login</button>
       </form>
     </div>

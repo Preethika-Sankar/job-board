@@ -89,6 +89,28 @@ app.post('/login', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+// ---------------- REGISTER ----------------
+app.post('/register', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    // Check if email already exists
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already used' });
+    }
+
+    // Insert new user (⚠️ plain password for now — later use bcrypt)
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, password, role]
+    );
+
+    res.json({ message: 'Registered successfully', user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
 
 // ---------------- SERVER ----------------
 const PORT = process.env.PORT || 3000;
