@@ -19,10 +19,10 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      setMessage('Login successful ✅');
+      setMessage(res.data.message); // ✅ use backend message
       console.log(res.data);
 
-      // Save user info or token if needed
+      // Save user info for later use
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
       // Redirect to dashboard

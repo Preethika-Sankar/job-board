@@ -20,7 +20,7 @@ export default function Register() {
       const res = await axios.post(`${API}/register`, formData, {
         headers: { 'Content-Type': 'application/json' }
       });
-      setMessage('Registration successful ✅');
+      setMessage(res.data.message); // ✅ use backend message
       console.log(res.data);
       navigate('/login');
     } catch (err) {
