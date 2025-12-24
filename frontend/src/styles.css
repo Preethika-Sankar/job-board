@@ -1,5 +1,0 @@
-body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
-a { color: #93c5fd; text-decoration: none; }
-input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #111827; color: #e2e8f0; }
-button { background: #2563eb; border: none; cursor: pointer; margin-top: 8px; }
-.card { max-width: 480px; margin: 40px auto; padding: 24px; background: #0b1220; border: 1px solid #1f2937; border-radius: 12px; }
