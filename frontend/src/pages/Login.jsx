@@ -19,17 +19,17 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      setMessage(res.data.message); // ✅ use backend message
+      setMessage(res.data.message); // ✅ show backend message
       console.log(res.data);
 
       // Save user info for later use
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // Redirect to dashboard
-      navigate('/dashboard');
+      // Delay navigation so message is visible
+      setTimeout(() => navigate('/dashboard'), 1000);
     } catch (err) {
       console.error(err);
-      setMessage('Login failed ❌');
+      setMessage(err.response?.data?.message || 'Login failed ❌');
     }
   };
 
