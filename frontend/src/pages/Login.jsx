@@ -11,8 +11,11 @@ export default function Login() {
 
   const onSubmit = async (data) => {
     try {
+      // ✅ Use environment variable instead of hard-coded URL
+      const API = process.env.REACT_APP_API_URL;
+
       const res = await axios.post(
-        'https://job-board-backend-rhph.onrender.com/login',
+        `${API}/login`,   // 👈 backend URL comes from .env / Vercel
         data,
         {
           headers: { 'Content-Type': 'application/json' }
