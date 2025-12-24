@@ -74,6 +74,23 @@ app.post('/applications', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+// ---------------- LOGIN ----------------
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1 AND password = $2',
+      [email, password]
+    );
+    if (result.rows.length === 0) {
+      return res.status(401).send('Login failed');
+    }
+    res.json({ message: 'Login successful', user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
 
 // ---------------- SERVER ----------------
 const PORT = process.env.PORT || 3000;
