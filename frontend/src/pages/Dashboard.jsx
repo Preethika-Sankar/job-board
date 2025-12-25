@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./Dashboard.css"; // ✅ Custom styles
 
 const Dashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -19,21 +20,23 @@ const Dashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      const updated = await res.json();
 
-      // Update state locally
+      if (!res.ok) throw new Error("Failed to update");
+
+      const updated = await res.json();
       setApplications((prev) =>
         prev.map((app) => (app.id === id ? { ...app, status: updated.status } : app))
       );
     } catch (err) {
       console.error("Error updating status:", err);
+      alert("Failed to update status ❌");
     }
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div className="dashboard-container">
       <h2>Recruiter Dashboard</h2>
-      <table border="1" cellPadding="10" style={{ width: "100%", marginTop: "1rem" }}>
+      <table className="dashboard-table">
         <thead>
           <tr>
             <th>Candidate Email</th>
@@ -59,11 +62,19 @@ const Dashboard = () => {
                   "No resume"
                 )}
               </td>
-              <td>{app.status}</td>
               <td>
-                <button onClick={() => updateStatus(app.id, "accepted")}>Accept</button>
-                <button onClick={() => updateStatus(app.id, "rejected")}>Reject</button>
-                <button onClick={() => updateStatus(app.id, "pending")}>Pending</button>
+                <span className={`status-badge ${app.status}`}>{app.status}</span>
+              </td>
+              <td>
+                <button className="btn accept" onClick={() => updateStatus(app.id, "accepted")}>
+                  Accept
+                </button>
+                <button className="btn reject" onClick={() => updateStatus(app.id, "rejected")}>
+                  Reject
+                </button>
+                <button className="btn pending" onClick={() => updateStatus(app.id, "pending")}>
+                  Pending
+                </button>
               </td>
             </tr>
           ))}
