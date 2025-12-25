@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import JobsList from "./pages/JobsList";
 import PostJob from "./pages/PostJob";
+import Logout from "./pages/Logout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -13,9 +14,12 @@ function App() {
     <>
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Protected routes */}
         <Route
           path="/dashboard"
           element={
@@ -40,6 +44,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Logout route */}
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </>
   );

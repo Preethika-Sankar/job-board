@@ -9,7 +9,6 @@ const Register = () => {
     e.preventDefault();
 
     try {
-      // Example: call backend register API
       const res = await fetch(`${process.env.REACT_APP_API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -19,7 +18,7 @@ const Register = () => {
       if (!res.ok) throw new Error("Registration failed");
       const data = await res.json();
 
-      // Save role in localStorage for ProtectedRoute
+      // Save role + token
       localStorage.setItem("role", data.role);
       localStorage.setItem("token", data.token);
 
