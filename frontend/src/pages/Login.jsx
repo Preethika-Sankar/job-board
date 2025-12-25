@@ -1,31 +1,40 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const API = process.env.REACT_APP_API_URL;
-
     try {
-      const res = await axios.post(`${API}/login`, { email, password });
-      localStorage.setItem('user', JSON.stringify(res.data));
-      setMessage("Login successful ✅");
-      console.log("User:", res.data);
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) throw new Error("Login failed");
+      const user = await res.json();
+
+      // ✅ Redirect based on role
+      if (user.role === "recruiter") {
+        navigate("/dashboard");
+      } else {
+        navigate("/jobs");
+      }
     } catch (err) {
-      console.error("Login error:", err);
-      setMessage(err.response?.data?.message || "Login failed ❌");
+      setError("Login failed ❌");
     }
   };
 
   return (
-    <div className="login-container">
+    <div className="form-container">
       <h2>Login</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleLogin}>
         <input
           type="email"
           placeholder="Email"
@@ -44,4 +53,6 @@ export default function Login() {
       </form>
     </div>
   );
-}
+};
+
+export default Login;

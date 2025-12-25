@@ -1,66 +1,51 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Register() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'candidate' // default role
-  });
-  const [message, setMessage] = useState('');
+const Register = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("candidate");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    const API = process.env.REACT_APP_API_URL;
-
     try {
-      const res = await axios.post(`${API}/register`, formData, {
-        headers: { 'Content-Type': 'application/json' }
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role }),
       });
-      setMessage(res.data.message); // ✅ show backend message
-      console.log(res.data);
 
-      // Delay navigation so message is visible
-      setTimeout(() => navigate('/login'), 1000);
+      if (!res.ok) throw new Error("Registration failed");
+      const data = await res.json();
+      console.log("Registered:", data);
+      navigate("/login");
     } catch (err) {
-      console.error(err);
-      setMessage(err.response?.data?.message || 'Registration failed ❌');
+      setError("Registration failed ❌");
     }
   };
 
   return (
-    <div className="page-container">
+    <div className="form-container">
       <h2>Register</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={e => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Name"
-          required
-        />
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleRegister}>
         <input
           type="email"
-          value={formData.email}
-          onChange={e => setFormData({ ...formData, email: e.target.value })}
           placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
         <input
           type="password"
-          value={formData.password}
-          onChange={e => setFormData({ ...formData, password: e.target.value })}
           placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <select
-          value={formData.role}
-          onChange={e => setFormData({ ...formData, role: e.target.value })}
-        >
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="candidate">Candidate</option>
           <option value="recruiter">Recruiter</option>
         </select>
@@ -68,4 +53,6 @@ export default function Register() {
       </form>
     </div>
   );
-}
+};
+
+export default Register;
