@@ -6,7 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Jobs from "./pages/Jobs";
+import JobsList from "./pages/JobsList"; // ✅ matches your actual file
 import PostJob from "./pages/PostJob";
 
 function App() {
@@ -36,14 +36,14 @@ function App() {
         />
 
         {/* Candidate-only routes */}
-        <Route
-          path="/jobs"
-          element={
-            <ProtectedRoute allowedRole="candidate">
-              <Jobs />
-            </ProtectedRoute>
-          }
-        />
+       <Route
+  path="/jobs"
+  element={
+    <ProtectedRoute allowedRole="candidate">
+      <JobsList />
+    </ProtectedRoute>
+  }
+/>
 
         {/* Default fallback */}
         <Route path="*" element={<Login />} />
