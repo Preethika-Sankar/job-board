@@ -33,8 +33,10 @@ const JobsList = () => {
             marginBottom: "1rem"
           }}>
             <h3>{job.title}</h3>
-            <p><strong>Company:</strong> {job.company}</p>
-            <p><strong>Location:</strong> {job.location}</p>
+            <p><strong>Company:</strong> {job.company || "N/A"}</p>
+            <p><strong>Location:</strong> {job.location || "N/A"}</p>
+            <p><strong>Salary:</strong> {job.salary || "N/A"}</p>
+            <p><strong>Tags:</strong> {job.tags || "N/A"}</p>
             <p>{job.description}</p>
           </div>
         ))
