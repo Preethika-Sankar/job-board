@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("candidate");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
+      // Example: call backend register API
       const res = await fetch(`${process.env.REACT_APP_API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -19,18 +18,27 @@ const Register = () => {
 
       if (!res.ok) throw new Error("Registration failed");
       const data = await res.json();
-      console.log("Registered:", data);
-      navigate("/login");
+
+      // Save role in localStorage for ProtectedRoute
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("token", data.token);
+
+      // Redirect based on role
+      if (data.role === "candidate") {
+        window.location.href = "/jobs";
+      } else if (data.role === "recruiter") {
+        window.location.href = "/dashboard";
+      }
     } catch (err) {
-      setError("Registration failed ❌");
+      console.error(err.message);
+      alert("Registration failed. Please try again.");
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>Register</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleRegister}>
+    <div className="card">
+      <h2 style={{ textAlign: "center", color: "#1e90ff" }}>Register</h2>
+      <form onSubmit={handleSubmit}>
         <input
           type="email"
           placeholder="Email"
@@ -51,6 +59,10 @@ const Register = () => {
         </select>
         <button type="submit">Register</button>
       </form>
+      <p style={{ textAlign: "center", marginTop: "1rem" }}>
+        Already have an account?{" "}
+        <a href="/login" style={{ color: "#1e90ff" }}>Login</a>
+      </p>
     </div>
   );
 };

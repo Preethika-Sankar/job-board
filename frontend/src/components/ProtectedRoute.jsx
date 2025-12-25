@@ -1,17 +1,20 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 
-// children = the page you want to protect
-// allowedRole = "recruiter" or "candidate"
-const ProtectedRoute = ({ children, allowedRole }) => {
-  const role = localStorage.getItem("role"); // ✅ role stored at login
+const ProtectedRoute = ({ allowedRole, children }) => {
+  // Example: role stored in localStorage after login/register
+  const userRole = localStorage.getItem("role");
 
-  if (role !== allowedRole) {
-    // 🚫 If role doesn’t match, redirect to login
+  if (!userRole) {
+    // If no role, force login
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ If role matches, render the page
+  if (userRole !== allowedRole) {
+    // If role doesn’t match, block access
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 };
 

@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
+      // Example: call backend login API
       const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -17,28 +16,28 @@ const Login = () => {
       });
 
       if (!res.ok) throw new Error("Login failed");
-      const user = await res.json();
+      const data = await res.json();
 
-      // ✅ Step 1: Store role in localStorage
-      localStorage.setItem("role", user.role);
-      localStorage.setItem("userId", user.id); // optional, if you need candidate_id later
+      // Save role in localStorage for ProtectedRoute
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("token", data.token);
 
-      // ✅ Step 2: Redirect based on role
-      if (user.role === "recruiter") {
-        navigate("/dashboard");
-      } else {
-        navigate("/jobs");
+      // Redirect based on role
+      if (data.role === "candidate") {
+        window.location.href = "/jobs";
+      } else if (data.role === "recruiter") {
+        window.location.href = "/dashboard";
       }
     } catch (err) {
-      setError("Login failed ❌");
+      console.error(err.message);
+      alert("Login failed. Please try again.");
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>Login</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleLogin}>
+    <div className="card">
+      <h2 style={{ textAlign: "center", color: "#1e90ff" }}>Login</h2>
+      <form onSubmit={handleSubmit}>
         <input
           type="email"
           placeholder="Email"
@@ -55,6 +54,10 @@ const Login = () => {
         />
         <button type="submit">Login</button>
       </form>
+      <p style={{ textAlign: "center", marginTop: "1rem" }}>
+        Don’t have an account?{" "}
+        <a href="/register" style={{ color: "#1e90ff" }}>Register</a>
+      </p>
     </div>
   );
 };
