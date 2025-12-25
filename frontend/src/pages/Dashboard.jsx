@@ -1,44 +1,76 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
 
-export default function Dashboard() {
-  const [jobs, setJobs] = useState([]);
-  const [error, setError] = useState('');
+const Dashboard = () => {
+  const [applications, setApplications] = useState([]);
 
+  // ✅ Fetch applications from backend
   useEffect(() => {
-    const API = process.env.REACT_APP_API_URL;
-
-    const fetchJobs = async () => {
-      try {
-        const res = await axios.get(`${API}/jobs`);
-        setJobs(res.data);
-      } catch (err) {
-        console.error("Error fetching jobs:", err);
-        setError(err.response?.data?.message || "Failed to load jobs ❌");
-      }
-    };
-
-    fetchJobs();
+    fetch(`${process.env.REACT_APP_API_URL}/applications`)
+      .then((res) => res.json())
+      .then((data) => setApplications(data))
+      .catch((err) => console.error("Error fetching applications:", err));
   }, []);
 
+  // ✅ Update application status
+  const updateStatus = async (id, status) => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/applications/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const updated = await res.json();
+
+      // Update state locally
+      setApplications((prev) =>
+        prev.map((app) => (app.id === id ? { ...app, status: updated.status } : app))
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
+  };
+
   return (
-    <div className="dashboard-container">
-      <h2>Job Dashboard</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {jobs.length === 0 ? (
-        <p>No jobs available</p>
-      ) : (
-        <ul className="job-list">
-          {jobs.map((job) => (
-            <li key={job.id} className="job-card">
-              <h3>{job.title}</h3>
-              <p><strong>Company:</strong> {job.company}</p>
-              <p><strong>Location:</strong> {job.location}</p>
-              <p>{job.description}</p>
-            </li>
+    <div style={{ padding: "2rem" }}>
+      <h2>Recruiter Dashboard</h2>
+      <table border="1" cellPadding="10" style={{ width: "100%", marginTop: "1rem" }}>
+        <thead>
+          <tr>
+            <th>Candidate Email</th>
+            <th>Job Title</th>
+            <th>Company</th>
+            <th>Resume</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {applications.map((app) => (
+            <tr key={app.id}>
+              <td>{app.candidate_email}</td>
+              <td>{app.job_title}</td>
+              <td>{app.company}</td>
+              <td>
+                {app.resume_url ? (
+                  <a href={app.resume_url} target="_blank" rel="noopener noreferrer">
+                    View Resume
+                  </a>
+                ) : (
+                  "No resume"
+                )}
+              </td>
+              <td>{app.status}</td>
+              <td>
+                <button onClick={() => updateStatus(app.id, "accepted")}>Accept</button>
+                <button onClick={() => updateStatus(app.id, "rejected")}>Reject</button>
+                <button onClick={() => updateStatus(app.id, "pending")}>Pending</button>
+              </td>
+            </tr>
           ))}
-        </ul>
-      )}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default Dashboard;
