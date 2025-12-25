@@ -1,41 +1,35 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS setup for frontend
+app.use(cors({
+  origin: [
+    'https://job-board-frontend.vercel.app', // Vercel frontend
+    'http://localhost:3000'                  // Local dev
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // ✅ PostgreSQL connection
-// ✅ PostgreSQL connection for Render
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // required for Render
+  ssl: { rejectUnauthorized: false } // Required for Render
 });
-// ✅ LOGIN ROUTE
+
+// ✅ Login
 app.post('/login', async (req, res) => {
   try {
-    console.log("Login request body:", req.body);
-
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
-    }
-
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
     const user = result.rows[0];
-
-    if (user.password !== password) {
-      return res.status(401).json({ message: "Invalid password" });
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-
     res.json({ id: user.id, email: user.email });
   } catch (err) {
     console.error("Login error:", err);
@@ -43,7 +37,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// ✅ REGISTER ROUTE
+// ✅ Register
 app.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -58,7 +52,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// ✅ GET JOBS
+// ✅ Get all jobs
 app.get('/jobs', async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM jobs");
@@ -69,7 +63,7 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-// ✅ POST A JOB
+// ✅ Post a job
 app.post('/jobs', async (req, res) => {
   try {
     const { title, company, location, description, recruiter_id } = req.body;
@@ -84,12 +78,16 @@ app.post('/jobs', async (req, res) => {
   }
 });
 
-// ✅ APPLY TO A JOB
+// ✅ Apply to a job (prevent duplicates)
 app.post('/applications', async (req, res) => {
   try {
     const { job_id, candidate_id, resume_url } = req.body;
     const result = await pool.query(
-      "INSERT INTO applications (job_id, candidate_id, resume_url, status) VALUES ($1, $2, $3, 'pending') RETURNING *",
+      `INSERT INTO applications (job_id, candidate_id, resume_url, status)
+       VALUES ($1, $2, $3, 'pending')
+       ON CONFLICT (job_id, candidate_id) DO UPDATE
+       SET resume_url = EXCLUDED.resume_url
+       RETURNING *`,
       [job_id, candidate_id, resume_url]
     );
     res.json(result.rows[0]);
@@ -99,7 +97,7 @@ app.post('/applications', async (req, res) => {
   }
 });
 
-// ✅ GET APPLICATIONS
+// ✅ Recruiter view: Get all applications with joined data
 app.get('/applications', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -111,6 +109,21 @@ app.get('/applications', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error("Applications error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ✅ Recruiter action: Update application status
+app.put('/applications/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const result = await pool.query(
+      "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
+      [status, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Update status error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
