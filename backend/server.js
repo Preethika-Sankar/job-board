@@ -5,11 +5,11 @@ require('dotenv').config();
 
 const app = express();
 
-// ✅ CORS setup for frontend
+// ✅ Allow your frontend domains
 app.use(cors({
   origin: [
     'https://job-board-frontend.vercel.app',
-    'https://job-board-sepia-two.vercel.app', // ✅ Add this
+    'https://job-board-sepia-two.vercel.app',
     'http://localhost:3000'
   ],
   credentials: true
@@ -19,10 +19,27 @@ app.use(express.json());
 // ✅ PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Required for Render
+  ssl: { rejectUnauthorized: false }
 });
 
-// ✅ Login
+// -------------------- AUTH --------------------
+
+// ✅ Register with role
+app.post('/register', async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+    const result = await pool.query(
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
+      [email, password, role || 'candidate']
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ✅ Login returns role
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -31,27 +48,14 @@ app.post('/login', async (req, res) => {
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    res.json({ id: user.id, email: user.email });
+    res.json({ id: user.id, email: user.email, role: user.role });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// ✅ Register
-app.post('/register', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const result = await pool.query(
-      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-      [email, password]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+// -------------------- JOBS --------------------
 
 // ✅ Get all jobs
 app.get('/jobs', async (req, res) => {
@@ -78,6 +82,8 @@ app.post('/jobs', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+// -------------------- APPLICATIONS --------------------
 
 // ✅ Apply to a job (prevent duplicates)
 app.post('/applications', async (req, res) => {
@@ -129,6 +135,7 @@ app.put('/applications/:id', async (req, res) => {
   }
 });
 
-// ✅ Start server
+// -------------------- SERVER --------------------
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
