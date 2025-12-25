@@ -8,8 +8,9 @@ const app = express();
 // ✅ CORS setup for frontend
 app.use(cors({
   origin: [
-    'https://job-board-frontend.vercel.app', // Vercel frontend
-    'http://localhost:3000'                  // Local dev
+    'https://job-board-frontend.vercel.app',
+    'https://job-board-sepia-two.vercel.app', // ✅ Add this
+    'http://localhost:3000'
   ],
   credentials: true
 }));
