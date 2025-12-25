@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';  // ✅ add Navigate
 import './App.css';
 
 import Navbar from './components/Navbar';
@@ -15,6 +15,9 @@ function App() {
       <Navbar />
       <div className="page-container">
         <Routes>
+          {/* Default route: redirect "/" to "/login" */}
+          <Route path="/" element={<Navigate to="/login" />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
