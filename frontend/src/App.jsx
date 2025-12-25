@@ -1,31 +1,54 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';  // ✅ add Navigate
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-import Navbar from './components/Navbar';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Jobs from './pages/JobsList'; // ✅ Match filename
-import PostJob from './pages/PostJob';
+// Pages
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Jobs from "./pages/Jobs";
+import PostJob from "./pages/PostJob";
 
 function App() {
   return (
-    <>
-      <Navbar />
-      <div className="page-container">
-        <Routes>
-          {/* Default route: redirect "/" to "/login" */}
-          <Route path="/" element={<Navigate to="/login" />} />
+    <Router>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/post-job" element={<PostJob />} />
-        </Routes>
-      </div>
-    </>
+        {/* Recruiter-only routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRole="recruiter">
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post-job"
+          element={
+            <ProtectedRoute allowedRole="recruiter">
+              <PostJob />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Candidate-only routes */}
+        <Route
+          path="/jobs"
+          element={
+            <ProtectedRoute allowedRole="candidate">
+              <Jobs />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default fallback */}
+        <Route path="*" element={<Login />} />
+      </Routes>
+    </Router>
   );
 }
 

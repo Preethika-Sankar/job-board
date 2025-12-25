@@ -1,44 +1,77 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
 
-export default function PostJob() {
-  const [jobData, setJobData] = useState({ title: '', description: '' });
-  const [message, setMessage] = useState('');
+const PostJob = () => {
+  const [title, setTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const recruiterId = localStorage.getItem("userId"); // stored at login
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const API = process.env.REACT_APP_API_URL;
-
     try {
-      const res = await axios.post(`${API}/jobs`, jobData, {
-        headers: { 'Content-Type': 'application/json' }
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          company,
+          location,
+          description,
+          recruiter_id: recruiterId,
+        }),
       });
-      setMessage('Job posted successfully ✅');
-      console.log(res.data);
+
+      if (!res.ok) throw new Error("Failed to post job");
+      const job = await res.json();
+      alert("✅ Job posted successfully!");
+      console.log(job);
+
+      // Reset form
+      setTitle("");
+      setCompany("");
+      setLocation("");
+      setDescription("");
     } catch (err) {
-      console.error(err);
-      setMessage('Failed to post job ❌');
+      alert("❌ Failed to post job");
     }
   };
 
   return (
-    <div className="page-container">
+    <div className="form-container">
       <h2>Post a Job</h2>
-      {message && <p>{message}</p>}
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          value={jobData.title}
-          onChange={e => setJobData({ ...jobData, title: e.target.value })}
           placeholder="Job Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Company"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          required
         />
         <textarea
-          value={jobData.description}
-          onChange={e => setJobData({ ...jobData, description: e.target.value })}
-          placeholder="Job Description"
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
         />
         <button type="submit">Post Job</button>
       </form>
     </div>
   );
-}
+};
+
+export default PostJob;

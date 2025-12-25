@@ -19,7 +19,11 @@ const Login = () => {
       if (!res.ok) throw new Error("Login failed");
       const user = await res.json();
 
-      // ✅ Redirect based on role
+      // ✅ Step 1: Store role in localStorage
+      localStorage.setItem("role", user.role);
+      localStorage.setItem("userId", user.id); // optional, if you need candidate_id later
+
+      // ✅ Step 2: Redirect based on role
       if (user.role === "recruiter") {
         navigate("/dashboard");
       } else {
