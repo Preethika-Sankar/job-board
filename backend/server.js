@@ -1,141 +1,127 @@
-const express = require('express');
-const cors = require('cors');
-const { Pool } = require('pg');
-require('dotenv').config();
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const pool = require("./db"); // PostgreSQL connection
 
 const app = express();
-
-// ✅ Allow your frontend domains
-app.use(cors({
-  origin: [
-    'https://job-board-frontend.vercel.app',
-    'https://job-board-sepia-two.vercel.app',
-    'http://localhost:3000'
-  ],
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 
-// ✅ PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// ======================= REGISTER =======================
+app.post("/register", async (req, res) => {
+  const { email, password, role } = req.body;
 
-// -------------------- AUTH --------------------
-
-// ✅ Register with role
-app.post('/register', async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert user
     const result = await pool.query(
-      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [email, password, role || 'candidate']
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id, role",
+      [email, hashedPassword, role]
     );
-    res.json(result.rows[0]);
+
+    const user = result.rows[0];
+
+    // Generate token
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({ role: user.role, token });
   } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Register error:", err.message);
+    res.status(500).json({ error: "Registration failed" });
   }
 });
 
-// ✅ Login returns role
-app.post('/login', async (req, res) => {
+// ======================= LOGIN =======================
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const { email, password } = req.body;
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
-    res.json({ id: user.id, email: user.email, role: user.role });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({ role: user.role, token });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Login error:", err.message);
+    res.status(500).json({ error: "Login failed" });
   }
 });
 
-// -------------------- JOBS --------------------
-
-// ✅ Get all jobs
-app.get('/jobs', async (req, res) => {
+// ======================= JOBS =======================
+app.get("/jobs", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM jobs");
+    const result = await pool.query("SELECT * FROM jobs ORDER BY id DESC");
     res.json(result.rows);
   } catch (err) {
-    console.error("Jobs error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Jobs error:", err.message);
+    res.status(500).json({ error: "Failed to fetch jobs" });
   }
 });
 
-// ✅ Post a job
-app.post('/jobs', async (req, res) => {
+app.post("/jobs", async (req, res) => {
+  const { title, company, location, salary, tags, description } = req.body;
+
   try {
-    const { title, company, location, description, recruiter_id } = req.body;
     const result = await pool.query(
-      "INSERT INTO jobs (title, company, location, description, recruiter_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [title, company, location, description, recruiter_id]
+      "INSERT INTO jobs (title, company, location, salary, tags, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [title, company, location, salary, tags, description]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.error("Post job error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Post job error:", err.message);
+    res.status(500).json({ error: "Failed to post job" });
   }
 });
 
-// -------------------- APPLICATIONS --------------------
+// ======================= APPLY =======================
+app.post("/apply/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+  const authHeader = req.headers.authorization;
 
-// ✅ Apply to a job (prevent duplicates)
-app.post('/applications', async (req, res) => {
+  if (!authHeader) {
+    return res.status(401).json({ error: "Missing token" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
-    const { job_id, candidate_id, resume_url } = req.body;
-    const result = await pool.query(
-      `INSERT INTO applications (job_id, candidate_id, resume_url, status)
-       VALUES ($1, $2, $3, 'pending')
-       ON CONFLICT (job_id, candidate_id) DO UPDATE
-       SET resume_url = EXCLUDED.resume_url
-       RETURNING *`,
-      [job_id, candidate_id, resume_url]
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    await pool.query(
+      "INSERT INTO applications (user_id, job_id) VALUES ($1, $2)",
+      [userId, jobId]
     );
-    res.json(result.rows[0]);
+
+    res.json({ message: "Application submitted successfully" });
   } catch (err) {
-    console.error("Application error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Apply error:", err.message);
+    res.status(500).json({ error: "Failed to apply" });
   }
 });
 
-// ✅ Recruiter view: Get all applications with joined data
-app.get('/applications', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT a.id, u.email AS candidate_email, j.title AS job_title, j.company, a.resume_url, a.status
-      FROM applications a
-      JOIN users u ON a.candidate_id = u.id
-      JOIN jobs j ON a.job_id = j.id
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Applications error:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// ✅ Recruiter action: Update application status
-app.put('/applications/:id', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const result = await pool.query(
-      "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
-      [status, req.params.id]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error("Update status error:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// -------------------- SERVER --------------------
-
-const PORT = process.env.PORT || 3000;
+// ======================= SERVER =======================
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
