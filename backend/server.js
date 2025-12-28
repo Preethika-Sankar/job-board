@@ -100,14 +100,26 @@ app.post("/apply/:jobId", async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-    await pool.query("INSERT INTO applications (user_id, job_id) VALUES ($1, $2)", [
-      userId,
-      jobId,
-    ]);
+
+    // ✅ Check if already applied
+    const check = await pool.query(
+      "SELECT * FROM applications WHERE user_id = $1 AND job_id = $2",
+      [userId, jobId]
+    );
+    if (check.rows.length > 0) {
+      return res.status(400).json({ message: "You have already applied to this job" });
+    }
+
+    // ✅ Insert new application
+    await pool.query(
+      "INSERT INTO applications (user_id, job_id) VALUES ($1, $2)",
+      [userId, jobId]
+    );
+
     res.json({ message: "Application submitted successfully" });
   } catch (err) {
     console.error("Apply error:", err.message);
-    res.status(500).json({ error: "Failed to apply" });
+    res.status(500).json({ error: "Failed to apply", details: err.message });
   }
 });
 
