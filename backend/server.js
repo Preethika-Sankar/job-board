@@ -23,7 +23,6 @@ app.get("/", (req, res) => {
 // ======================= REGISTER =======================
 app.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
-  console.log("Register request:", email, role);
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -46,7 +45,6 @@ app.post("/register", async (req, res) => {
 // ======================= LOGIN =======================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  console.log("Login request:", email);
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
