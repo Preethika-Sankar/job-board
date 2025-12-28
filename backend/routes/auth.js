@@ -2,14 +2,14 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const pool = require("../db"); // adjust path if needed
+const pool = require("../db");
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   console.log("🔍 Incoming login request");
   console.log("Email:", email);
-  console.log("Password:", password);
+  console.log("Plain password:", password);
 
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
@@ -22,6 +22,8 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    console.log("Stored hash:", user.password);
+
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("Password match:", isMatch);
 
@@ -30,9 +32,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     console.log("✅ Login successful");
     res.json({ role: user.role, token });
