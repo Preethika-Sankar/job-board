@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");   // ✅ PostgreSQL client
+const { Pool } = require("pg");
 
 const app = express();
 app.use(cors());
@@ -18,6 +18,7 @@ const pool = new Pool({
 // ======================= REGISTER =======================
 app.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
+  console.log("Register request:", email, role);
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -25,7 +26,11 @@ app.post("/register", async (req, res) => {
       [email, hashedPassword, role]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
     res.json({ role: user.role, token });
   } catch (err) {
     console.error("Register error:", err.message);
@@ -36,6 +41,7 @@ app.post("/register", async (req, res) => {
 // ======================= LOGIN =======================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  console.log("Login request:", email);
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
@@ -44,7 +50,11 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
     res.json({ role: user.role, token });
   } catch (err) {
     console.error("Login error:", err.message);
@@ -87,7 +97,10 @@ app.post("/apply/:jobId", async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-    await pool.query("INSERT INTO applications (user_id, job_id) VALUES ($1, $2)", [userId, jobId]);
+    await pool.query("INSERT INTO applications (user_id, job_id) VALUES ($1, $2)", [
+      userId,
+      jobId,
+    ]);
     res.json({ message: "Application submitted successfully" });
   } catch (err) {
     console.error("Apply error:", err.message);
@@ -97,4 +110,4 @@ app.post("/apply/:jobId", async (req, res) => {
 
 // ======================= SERVER =======================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
