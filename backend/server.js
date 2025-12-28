@@ -15,6 +15,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }, // Render/Postgres requires SSL
 });
 
+// ======================= ROOT =======================
+app.get("/", (req, res) => {
+  res.send("Job Board backend is running ✅");
+});
+
 // ======================= REGISTER =======================
 app.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
