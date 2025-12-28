@@ -3,8 +3,8 @@ import React, { useState } from "react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");   // ✅ feedback message
-  const [messageType, setMessageType] = useState(""); // "success" or "error"
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,15 +24,13 @@ const Login = () => {
 
       const data = await res.json();
 
-      // Save role + token
+      // ✅ Save role + token
       localStorage.setItem("role", data.role);
       localStorage.setItem("token", data.token);
 
-      // ✅ Show success message
       setMessage("Login successful! Redirecting...");
       setMessageType("success");
 
-      // Redirect after short delay
       setTimeout(() => {
         if (data.role === "candidate") {
           window.location.href = "/jobs";
@@ -41,7 +39,7 @@ const Login = () => {
         }
       }, 1500);
     } catch (err) {
-      console.error(err.message);
+      console.error("Login error:", err);
       setMessage("An error occurred. Please try again.");
       setMessageType("error");
     }
@@ -68,7 +66,6 @@ const Login = () => {
         <button type="submit">Login</button>
       </form>
 
-      {/* ✅ Feedback message */}
       {message && (
         <p
           style={{

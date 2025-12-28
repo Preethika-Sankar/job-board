@@ -21,6 +21,13 @@ const JobsList = () => {
   const handleApply = async (jobId) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must be logged in to apply");
+        return;
+      }
+
+      console.log("Applying to job:", jobId, "with token:", token);
+
       const res = await fetch(`${process.env.REACT_APP_API_URL}/apply/${jobId}`, {
         method: "POST",
         headers: {
@@ -30,9 +37,10 @@ const JobsList = () => {
       });
 
       if (!res.ok) throw new Error("Failed to apply");
-      alert("Application submitted successfully!");
+      const data = await res.json();
+      alert(data.message);
     } catch (err) {
-      console.error(err.message);
+      console.error("Apply error:", err);
       alert("Error applying for job. Please try again.");
     }
   };
