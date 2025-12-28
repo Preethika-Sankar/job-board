@@ -3,6 +3,8 @@ import React, { useState } from "react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");   // ✅ feedback message
+  const [messageType, setMessageType] = useState(""); // "success" or "error"
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,22 +16,34 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) throw new Error("Login failed");
+      if (!res.ok) {
+        setMessage("Login failed. Please check your credentials.");
+        setMessageType("error");
+        return;
+      }
+
       const data = await res.json();
 
       // Save role + token
       localStorage.setItem("role", data.role);
       localStorage.setItem("token", data.token);
 
-      // Redirect based on role
-      if (data.role === "candidate") {
-        window.location.href = "/jobs";
-      } else if (data.role === "recruiter") {
-        window.location.href = "/dashboard";
-      }
+      // ✅ Show success message
+      setMessage("Login successful! Redirecting...");
+      setMessageType("success");
+
+      // Redirect after short delay
+      setTimeout(() => {
+        if (data.role === "candidate") {
+          window.location.href = "/jobs";
+        } else if (data.role === "recruiter") {
+          window.location.href = "/dashboard";
+        }
+      }, 1500);
     } catch (err) {
       console.error(err.message);
-      alert("Login failed. Please try again.");
+      setMessage("An error occurred. Please try again.");
+      setMessageType("error");
     }
   };
 
@@ -53,6 +67,21 @@ const Login = () => {
         />
         <button type="submit">Login</button>
       </form>
+
+      {/* ✅ Feedback message */}
+      {message && (
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "1rem",
+            color: messageType === "success" ? "#4CAF50" : "#FF4C4C",
+            fontWeight: "bold",
+          }}
+        >
+          {message}
+        </p>
+      )}
+
       <p style={{ textAlign: "center", marginTop: "1rem" }}>
         Don’t have an account?{" "}
         <a href="/register" style={{ color: "#1e90ff" }}>Register</a>

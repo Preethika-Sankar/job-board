@@ -4,6 +4,8 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("candidate");
+  const [message, setMessage] = useState("");       // ✅ feedback message
+  const [messageType, setMessageType] = useState(""); // "success" or "error"
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,22 +17,34 @@ const Register = () => {
         body: JSON.stringify({ email, password, role }),
       });
 
-      if (!res.ok) throw new Error("Registration failed");
+      if (!res.ok) {
+        setMessage("Registration failed. Please try again.");
+        setMessageType("error");
+        return;
+      }
+
       const data = await res.json();
 
       // Save role + token
       localStorage.setItem("role", data.role);
       localStorage.setItem("token", data.token);
 
-      // Redirect based on role
-      if (data.role === "candidate") {
-        window.location.href = "/jobs";
-      } else if (data.role === "recruiter") {
-        window.location.href = "/dashboard";
-      }
+      // ✅ Show success message
+      setMessage("Registration successful! Redirecting...");
+      setMessageType("success");
+
+      // Redirect after short delay
+      setTimeout(() => {
+        if (data.role === "candidate") {
+          window.location.href = "/jobs";
+        } else if (data.role === "recruiter") {
+          window.location.href = "/dashboard";
+        }
+      }, 1500);
     } catch (err) {
       console.error(err.message);
-      alert("Registration failed. Please try again.");
+      setMessage("An error occurred. Please try again.");
+      setMessageType("error");
     }
   };
 
@@ -58,6 +72,21 @@ const Register = () => {
         </select>
         <button type="submit">Register</button>
       </form>
+
+      {/* ✅ Feedback message */}
+      {message && (
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "1rem",
+            color: messageType === "success" ? "#4CAF50" : "#FF4C4C",
+            fontWeight: "bold",
+          }}
+        >
+          {message}
+        </p>
+      )}
+
       <p style={{ textAlign: "center", marginTop: "1rem" }}>
         Already have an account?{" "}
         <a href="/login" style={{ color: "#1e90ff" }}>Login</a>
