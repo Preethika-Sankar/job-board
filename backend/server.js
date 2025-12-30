@@ -1,37 +1,40 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const pool = require("./db");
-
-// Routes
-const authRoutes = require("./routes/auth");
-const registerRoutes = require("./routes/register");
-const jobRoutes = require("./routes/jobs");
-const applicationRoutes = require("./routes/applications");
-const applyRoutes = require("./routes/apply");
-
-dotenv.config();
+const { Pool } = require("pg");
+require("dotenv").config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Required to parse JSON body
+app.use(express.json());
 
-// Route mounting
-app.use("/", authRoutes);         // /login
-app.use("/", registerRoutes);     // /register
-app.use("/jobs", jobRoutes);      // /jobs
-app.use("/applications", applicationRoutes); // /applications
-app.use("/", applyRoutes);
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // needed for Render/Postgres
+  },
+});
 
-// Health check
-app.get("/", (req, res) => {
-  res.send("Backend is running ✅");
+// Test DB connection
+pool.connect()
+  .then(() => console.log("✅ Connected to PostgreSQL"))
+  .catch(err => console.error("❌ DB connection error:", err.message));
+
+// Routes
+const authRoutes = require("./routes/auth"); // your registration/login code
+app.use("/", authRoutes);
+
+// Health check route
+app.get("/ping", (req, res) => {
+  res.json({ message: "Server is alive 🚀" });
 });
 
 // Start server
-const PORT = process.env.PORT || 3030;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
+
+module.exports = app;
