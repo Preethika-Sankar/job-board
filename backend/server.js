@@ -23,8 +23,11 @@ pool.connect()
   .catch(err => console.error("❌ DB connection error:", err.message));
 
 // Routes
-const authRoutes = require("./routes/auth"); // your registration/login code
+const authRoutes = require("./routes/auth");   // registration + login
+const jobRoutes = require("./routes/jobs");   // job apply route
+
 app.use("/", authRoutes);
+app.use("/", jobRoutes);
 
 // Health check route
 app.get("/ping", (req, res) => {
