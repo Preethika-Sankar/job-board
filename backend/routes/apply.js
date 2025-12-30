@@ -21,7 +21,9 @@ const authenticate = (req, res, next) => {
 // Apply route
 router.post("/apply/:jobId", authenticate, async (req, res) => {
   const jobId = req.params.jobId;
-  const userId = req.user.id;
+  const userId = req.user.userId;
+
+  console.log("🧠 Applying with userId:", userId, "jobId:", jobId);
 
   try {
     await pool.query(
@@ -34,5 +36,3 @@ router.post("/apply/:jobId", authenticate, async (req, res) => {
     res.status(500).json({ error: "Error applying for job" });
   }
 });
-
-module.exports = router;
