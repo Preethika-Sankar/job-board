@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth");
 const registerRoutes = require("./routes/register");
 const jobRoutes = require("./routes/jobs");
 const applicationRoutes = require("./routes/applications");
+const applyRoutes = require("./routes/apply");
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/", authRoutes);         // /login
 app.use("/", registerRoutes);     // /register
 app.use("/jobs", jobRoutes);      // /jobs
 app.use("/applications", applicationRoutes); // /applications
+app.use("/", applyRoutes);
 
 // Health check
 app.get("/", (req, res) => {
