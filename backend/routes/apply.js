@@ -20,11 +20,13 @@ const authenticate = (req, res, next) => {
 // Route
 router.post("/apply/:jobId", authenticate, async (req, res) => {
   const jobId = req.params.jobId;
-  const userId = req.user.userId;
+  const userId = req.user.userId; // ✅ must match token payload
+
+  console.log("🧠 Applying with jobId:", jobId, "userId:", userId);
 
   try {
     await pool.query(
-      "INSERT INTO applications (job_id, user_id) VALUES ($1, $2)",
+      "INSERT INTO applications (job_id, user_id, applied_at) VALUES ($1, $2, NOW())",
       [jobId, userId]
     );
     res.status(201).json({ message: "Application submitted successfully" });
