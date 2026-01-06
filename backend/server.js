@@ -26,6 +26,11 @@ pool.connect()
 const authRoutes = require("./routes/auth");   // registration + login
 const jobRoutes = require("./routes/jobs");   // job apply route
 
+// ✅ Root route
+app.get("/", (req, res) => {
+  res.send("Job Board API is running ✅");
+});
+
 app.use("/", authRoutes);
 app.use("/", jobRoutes);
 
