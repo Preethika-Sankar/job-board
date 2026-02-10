@@ -14,10 +14,11 @@ const jobsRoute = require("./routes/jobs");
 const applyRoute = require("./routes/apply");
 const applicationsRoute = require("./routes/applications");
 
+// ✅ Namespace all routes under /api
 app.use("/api/auth", authRoute);
-app.use("/jobs", jobsRoute);
-app.use("/apply", applyRoute);
-app.use("/applications", applicationsRoute);
+app.use("/api/jobs", jobsRoute);
+app.use("/api/apply", applyRoute);
+app.use("/api/applications", applicationsRoute);
 
 // Test route
 app.get("/", (req, res) => {

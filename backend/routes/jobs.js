@@ -16,42 +16,38 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = user;
+    req.user = user; // contains id + role
     next();
   });
 }
 
-// Apply for a job
-router.post("/apply/:id", authenticateToken, async (req, res) => {
-  const jobId = req.params.id;
-  const userId = req.user.userId;
-
+// ✅ Get all jobs (open to everyone)
+router.get("/", async (req, res) => {
   try {
-    // Check if job exists
-    const job = await pool.query("SELECT * FROM jobs WHERE id = $1", [jobId]);
-    if (job.rows.length === 0) {
-      return res.status(404).json({ error: "Job not found" });
-    }
-
-    // Prevent duplicate applications
-    const existingApp = await pool.query(
-      "SELECT * FROM applications WHERE user_id = $1 AND job_id = $2",
-      [userId, jobId]
-    );
-    if (existingApp.rows.length > 0) {
-      return res.status(400).json({ error: "Already applied to this job" });
-    }
-
-    // Insert application
-    await pool.query(
-      "INSERT INTO applications (user_id, job_id) VALUES ($1, $2)",
-      [userId, jobId]
-    );
-
-    res.json({ message: "Application submitted successfully" });
+    const jobs = await pool.query("SELECT * FROM jobs ORDER BY created_at DESC");
+    res.json(jobs.rows);
   } catch (err) {
-    console.error("🔥 Apply error:", err.message);
-    res.status(500).json({ error: "Failed to apply" });
+    console.error("🔥 Jobs fetch error:", err.message);
+    res.status(500).json({ error: "Failed to fetch jobs" });
+  }
+});
+
+// ✅ Recruiter posts a new job
+router.post("/", authenticateToken, async (req, res) => {
+  if (req.user.role !== "recruiter") {
+    return res.status(403).json({ error: "Only recruiters can post jobs" });
+  }
+
+  const { title, description, company, location } = req.body;
+  try {
+    const newJob = await pool.query(
+      "INSERT INTO jobs (title, description, company, location, recruiter_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [title, description, company, location, req.user.id]
+    );
+    res.json(newJob.rows[0]);
+  } catch (err) {
+    console.error("🔥 Job post error:", err.message);
+    res.status(500).json({ error: "Failed to create job" });
   }
 });
 
