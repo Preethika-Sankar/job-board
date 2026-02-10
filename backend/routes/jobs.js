@@ -33,6 +33,15 @@ router.post("/apply/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Job not found" });
     }
 
+    // Prevent duplicate applications
+    const existingApp = await pool.query(
+      "SELECT * FROM applications WHERE user_id = $1 AND job_id = $2",
+      [userId, jobId]
+    );
+    if (existingApp.rows.length > 0) {
+      return res.status(400).json({ error: "Already applied to this job" });
+    }
+
     // Insert application
     await pool.query(
       "INSERT INTO applications (user_id, job_id) VALUES ($1, $2)",

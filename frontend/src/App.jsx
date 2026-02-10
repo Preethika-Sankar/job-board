@@ -1,54 +1,67 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
 import JobsList from "./pages/JobsList";
 import PostJob from "./pages/PostJob";
 import Logout from "./pages/Logout";
-import ProtectedRoute from "./components/ProtectedRoute";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
-    <>
+    <Router>
       <Navbar />
+
       <Routes>
-        {/* Public routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute allowedRole="recruiter">
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        {/* Candidate Routes */}
         <Route
           path="/jobs"
           element={
-            <ProtectedRoute allowedRole="candidate">
+            <ProtectedRoute allowedRoles={["candidate"]}>
               <JobsList />
             </ProtectedRoute>
           }
         />
+
+        {/* Recruiter Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/post-job"
           element={
-            <ProtectedRoute allowedRole="recruiter">
+            <ProtectedRoute allowedRoles={["recruiter"]}>
               <PostJob />
             </ProtectedRoute>
           }
         />
 
-        {/* Logout route */}
-        <Route path="/logout" element={<Logout />} />
+        {/* Logout */}
+        <Route
+          path="/logout"
+          element={
+            <ProtectedRoute allowedRoles={["candidate", "recruiter"]}>
+              <Logout />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </>
+    </Router>
   );
 }
 

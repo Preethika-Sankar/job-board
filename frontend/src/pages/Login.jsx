@@ -1,53 +1,73 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+  `${process.env.REACT_APP_API_URL}/api/auth/login`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  }
+);
 
-      if (!res.ok) {
-        setMessage("Login failed. Please check your credentials.");
-        setMessageType("error");
+      // Safe JSON parsing
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        console.error("Parse error:", parseErr);
+        setError("Unexpected server response.");
+        setLoading(false);
         return;
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
 
-      // ✅ Save role + token
-      localStorage.setItem("role", data.role);
+      // Save auth data
       localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("email", data.email);
 
-      setMessage("Login successful! Redirecting...");
-      setMessageType("success");
-
-      setTimeout(() => {
-        if (data.role === "candidate") {
-          window.location.href = "/jobs";
-        } else if (data.role === "recruiter") {
-          window.location.href = "/dashboard";
-        }
-      }, 1500);
+      // Redirect by role
+      if (data.role === "candidate") {
+        navigate("/jobs");
+      } else if (data.role === "recruiter") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error("Login error:", err);
-      setMessage("An error occurred. Please try again.");
-      setMessageType("error");
+      setError("Server error. Try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="card">
-      <h2 style={{ textAlign: "center", color: "#1e90ff" }}>Login</h2>
+    <div style={{ maxWidth: "400px", margin: "40px auto" }}>
+      <h2>Login</h2>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <form onSubmit={handleSubmit}>
         <input
           type="email"
@@ -55,33 +75,29 @@ const Login = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
         />
+
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
         />
-        <button type="submit">Login</button>
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ width: "100%", padding: "10px" }}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
       </form>
 
-      {message && (
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "1rem",
-            color: messageType === "success" ? "#4CAF50" : "#FF4C4C",
-            fontWeight: "bold",
-          }}
-        >
-          {message}
-        </p>
-      )}
-
-      <p style={{ textAlign: "center", marginTop: "1rem" }}>
-        Don’t have an account?{" "}
-        <a href="/register" style={{ color: "#1e90ff" }}>Register</a>
+      <p style={{ marginTop: "10px" }}>
+        Don’t have an account? <Link to="/register">Register</Link>
       </p>
     </div>
   );

@@ -1,75 +1,59 @@
 const express = require("express");
-const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");
+const pool = require("../db");
 
-// Configure PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const router = express.Router();
 
-// ---------------- REGISTER ----------------
+// Register route
 router.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
+  console.log("Register route hit with:", email, role);
 
   try {
-    // Check if user already exists
-    const existingUser = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "Email already registered" });
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("Password hashed");
 
-    // Insert user into DB
-    const newUser = await pool.query(
-      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
+    await pool.query(
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3)",
       [email, hashedPassword, role]
     );
+    console.log("User inserted");
 
-    // Create JWT token
-    const token = jwt.sign(
-      { userId: newUser.rows[0].id, role: newUser.rows[0].role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({ token });
+    res.status(200).json({ message: "Registration successful" });
   } catch (err) {
-    console.error("🔥 Registration error:", err.message);
+    console.error("Registration error:", err.message);
     res.status(500).json({ error: "Registration failed" });
   }
 });
 
-// ---------------- LOGIN ----------------
+// Login route
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  console.log("Login attempt:", email);
 
   try {
-    // Find user
-    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (user.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    console.log("DB query result:", result.rows);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "User not found" });
     }
 
-    // Compare password
-    const validPassword = await bcrypt.compare(password, user.rows[0].password);
-    if (!validPassword) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      { userId: user.rows[0].id, role: user.rows[0].role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    res.json({ token });
+    res.status(200).json({ token, role: user.role });
   } catch (err) {
-    console.error("🔥 Login error:", err.message);
+    console.error("Login error:", err.message);
     res.status(500).json({ error: "Login failed" });
   }
 });

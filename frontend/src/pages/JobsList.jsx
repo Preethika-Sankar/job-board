@@ -2,67 +2,59 @@ import React, { useEffect, useState } from "react";
 
 const JobsList = () => {
   const [jobs, setJobs] = useState([]);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/jobs`);
-        if (!res.ok) throw new Error("Failed to fetch jobs");
         const data = await res.json();
         setJobs(data);
       } catch (err) {
         console.error("Error fetching jobs:", err);
       }
     };
-
     fetchJobs();
   }, []);
 
-  const handleApply = async (jobId) => {
+  const applyJob = async (jobId) => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("You must be logged in to apply");
-        return;
-      }
-
-      console.log("Applying to job:", jobId, "with token:", token);
-
       const res = await fetch(`${process.env.REACT_APP_API_URL}/apply/${jobId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
         },
+        body: JSON.stringify({}),
       });
-
-      if (!res.ok) throw new Error("Failed to apply");
       const data = await res.json();
-      alert(data.message);
+      setMessage(data.message || data.error);
     } catch (err) {
-      console.error("Apply error:", err);
-      alert("Error applying for job. Please try again.");
+      console.error("Error applying:", err);
+      setMessage("Something went wrong. Try again.");
     }
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Available Jobs</h2>
-      {jobs.length === 0 ? (
-        <p>No jobs found.</p>
-      ) : (
-        jobs.map((job) => (
-          <div key={job.id} className="card">
-            <h3>{job.title}</h3>
-            <p><strong>Company:</strong> {job.company || "N/A"}</p>
-            <p><strong>Location:</strong> {job.location || "N/A"}</p>
-            <p><strong>Salary:</strong> {job.salary || "N/A"}</p>
-            <p><strong>Tags:</strong> {job.tags || "N/A"}</p>
-            <p>{job.description}</p>
-            <button onClick={() => handleApply(job.id)}>Apply</button>
-          </div>
-        ))
+    <div>
+      <h2 style={{ textAlign: "center", color: "#1e90ff" }}>Available Jobs</h2>
+      {message && (
+        <p style={{ textAlign: "center", color: "#4CAF50", fontWeight: "bold" }}>{message}</p>
       )}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
+        {jobs.map((job) => (
+          <div key={job.id} className="card" style={{ width: "300px", margin: "1rem", padding: "1rem", background: "#1e1e1e", color: "#fff", borderRadius: "8px" }}>
+            <h3 style={{ color: "#1e90ff" }}>{job.title}</h3>
+            <p><strong>Company:</strong> {job.company}</p>
+            <p><strong>Location:</strong> {job.location}</p>
+            <p><strong>Salary:</strong> ₹{job.salary}</p>
+            <button onClick={() => applyJob(job.id)} style={{ marginTop: "1rem", backgroundColor: "#1e90ff", color: "#fff", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer" }}>
+              Apply
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
