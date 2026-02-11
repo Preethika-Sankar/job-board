@@ -16,7 +16,7 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = user; // contains id + role
+    req.user = user; // contains id, role, email
     next();
   });
 }
@@ -38,11 +38,11 @@ router.post("/", authenticateToken, async (req, res) => {
     return res.status(403).json({ error: "Only recruiters can post jobs" });
   }
 
-  const { title, description, company, location } = req.body;
+  const { title, description, company, location, salary } = req.body;
   try {
     const newJob = await pool.query(
-      "INSERT INTO jobs (title, description, company, location, recruiter_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [title, description, company, location, req.user.id]
+      "INSERT INTO jobs (title, description, company, location, salary, recruiter_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [title, description, company, location, salary || null, req.user.id]
     );
     res.json(newJob.rows[0]);
   } catch (err) {
