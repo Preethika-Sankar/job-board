@@ -9,7 +9,8 @@ import Register from "./pages/Register";
 import JobsList from "./pages/JobsList";
 import PostJob from "./pages/PostJob";
 import Logout from "./pages/Logout";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"; // candidate dashboard
+import RecruiterDashboard from "./pages/RecruiterDashboard"; // recruiter dashboard
 
 function App() {
   return (
@@ -31,17 +32,24 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Recruiter Routes */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRoute allowedRoles={["candidate"]}>
               <Dashboard />
             </ProtectedRoute>
           }
         />
 
+        {/* Recruiter Routes */}
+        <Route
+          path="/recruiter-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <RecruiterDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/post-job"
           element={

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const Dashboard = () => {
+const RecruiterDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -10,7 +10,7 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-          "https://job-board-backend-rhph.onrender.com/api/applications/me",
+          "https://job-board-backend-rhph.onrender.com/api/applications/employer",
           {
             method: "GET",
             headers: {
@@ -25,10 +25,10 @@ const Dashboard = () => {
         if (response.ok) {
           setApplications(data);
         } else {
-          alert(data.error || "Failed to fetch applications");
+          alert(data.error || "Failed to fetch recruiter applications");
         }
       } catch (err) {
-        console.error("Error fetching applications:", err);
+        console.error("Error fetching recruiter applications:", err);
       } finally {
         setLoading(false);
       }
@@ -37,20 +37,24 @@ const Dashboard = () => {
     fetchApplications();
   }, []);
 
-  if (loading) return <p>Loading your applications...</p>;
+  if (loading) return <p>Loading applications for your jobs...</p>;
 
   return (
     <div>
-      <h2>My Applications</h2>
+      <h2>Applications for My Posted Jobs</h2>
       {applications.length === 0 ? (
-        <p>You haven’t applied to any jobs yet.</p>
+        <p>No one has applied to your jobs yet.</p>
       ) : (
         <ul>
           {applications.map((app) => (
             <li key={app.id}>
+              <strong>{app.candidate_email}</strong> applied for{" "}
               <strong>{app.title}</strong> at {app.company} ({app.location})
               <br />
-              Status: {app.status || "Submitted"}
+              Resume:{" "}
+              <a href={app.resume_url} target="_blank" rel="noopener noreferrer">
+                View Resume
+              </a>
             </li>
           ))}
         </ul>
@@ -59,4 +63,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default RecruiterDashboard;
