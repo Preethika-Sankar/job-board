@@ -40,6 +40,48 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
+// ✅ Candidate fetches their own applications
+router.get("/me", authenticateToken, async (req, res) => {
+  if (req.user.role !== "candidate") {
+    return res.status(403).json({ error: "Only candidates can view their applications" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.status, a.applied_at, j.title, j.company, j.location
+       FROM applications a
+       JOIN jobs j ON a.job_id = j.id
+       WHERE a.candidate_id = $1
+       ORDER BY a.applied_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("🔥 Fetch applications error:", err.message);
+    res.status(500).json({ error: "Failed to fetch applications" });
+  }
+});
+
+// ✅ Recruiter fetches all applications (optional)
+router.get("/", authenticateToken, async (req, res) => {
+  if (req.user.role !== "recruiter") {
+    return res.status(403).json({ error: "Only recruiters can view applications" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.status, a.applied_at, a.candidate_id, j.title, j.company, j.location
+       FROM applications a
+       JOIN jobs j ON a.job_id = j.id
+       ORDER BY a.applied_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("🔥 Fetch all applications error:", err.message);
+    res.status(500).json({ error: "Failed to fetch applications" });
+  }
+});
+
 // ✅ Recruiter updates application status
 router.put("/:id/status", authenticateToken, async (req, res) => {
   if (req.user.role !== "recruiter") {
