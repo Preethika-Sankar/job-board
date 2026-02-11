@@ -1,72 +1,61 @@
-const express = require('express');
-const pool = require('../db');
-const auth = require('../middleware/auth');
+const express = require("express");
 const router = express.Router();
+const { Pool } = require("pg");
+const jwt = require("jsonwebtoken");
 
-// Candidate applies to a job
-router.post('/', auth, async (req, res) => {
-  if (req.user.role !== 'candidate') {
-    return res.status(403).json({ message: 'Forbidden' });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+// Middleware to verify token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token missing" });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid token" });
+    req.user = user; // contains id, role, email
+    next();
+  });
+}
+
+// ✅ Candidate applies for a job
+router.post("/", authenticateToken, async (req, res) => {
+  if (req.user.role !== "candidate") {
+    return res.status(403).json({ error: "Only candidates can apply" });
   }
 
-  const { job_id, resume_url } = req.body;
-
-  // 🔍 Debug logs
-  console.log("Decoded user from token:", req.user);
-  console.log("Apply request payload:", { job_id, candidate_id: req.user.id, resume_url });
-
+  const { jobId, resumeUrl } = req.body;
   try {
-    await pool.query(
-      'INSERT INTO applications (job_id, candidate_id, resume_url, status) VALUES ($1, $2, $3, $4)',
-      [job_id, req.user.id, resume_url || '', 'submitted']
+    const newApp = await pool.query(
+      "INSERT INTO applications (job_id, candidate_id, resume_url, status) VALUES ($1, $2, $3, $4) RETURNING *",
+      [jobId, req.user.id, resumeUrl, "Pending"]
     );
-    res.json({ message: 'Application submitted' });
-  } catch (e) {
-    console.error("🔥 Apply error:", e.message);
-    res.status(500).json({ message: e.message });
+    res.json(newApp.rows[0]);
+  } catch (err) {
+    console.error("🔥 Application error:", err.message);
+    res.status(500).json({ error: "Failed to apply" });
   }
 });
 
-// Candidate views their applications
-router.get('/me', auth, async (req, res) => {
-  if (req.user.role !== 'candidate') {
-    return res.status(403).json({ message: 'Forbidden' });
+// ✅ Recruiter updates application status
+router.put("/:id/status", authenticateToken, async (req, res) => {
+  if (req.user.role !== "recruiter") {
+    return res.status(403).json({ error: "Only recruiters can update status" });
   }
 
+  const { status } = req.body; // "Selected", "Rejected", "Pending"
   try {
-    const result = await pool.query(
-      `SELECT a.*, j.title, j.company, j.location
-       FROM applications a
-       JOIN jobs j ON a.job_id = j.id
-       WHERE a.candidate_id = $1`,
-      [req.user.id]
+    const updated = await pool.query(
+      "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
+      [status, req.params.id]
     );
-    res.json(result.rows);
-  } catch (e) {
-    console.error("🔥 Candidate applications error:", e.message);
-    res.status(500).json({ message: e.message });
-  }
-});
-
-// Recruiter views applications for their jobs
-router.get('/employer', auth, async (req, res) => {
-  if (req.user.role !== 'recruiter') {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-
-  try {
-    const result = await pool.query(
-      `SELECT a.*, u.email AS candidate_email, j.title
-       FROM applications a
-       JOIN jobs j ON a.job_id = j.id
-       JOIN users u ON a.candidate_id = u.id
-       WHERE j.recruiter_id = $1`,
-      [req.user.id]
-    );
-    res.json(result.rows);
-  } catch (e) {
-    console.error("🔥 Employer applications error:", e.message);
-    res.status(500).json({ message: e.message });
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error("🔥 Status update error:", err.message);
+    res.status(500).json({ error: "Failed to update status" });
   }
 });
 
