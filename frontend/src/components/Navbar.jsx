@@ -1,13 +1,32 @@
 import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const role = localStorage.getItem("role");
-  const token = localStorage.getItem("token");
+  const [role, setRole] = useState(localStorage.getItem("role"));
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
+  // Watch for changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setRole(localStorage.getItem("role"));
+      setToken(localStorage.getItem("token"));
+    };
+
+    // Listen for storage changes (like login/logout)
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also run once immediately in case localStorage changed
+    handleStorageChange();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   return (
     <div className="navbar">
-      {/* Public links (only when not logged in) */}
+      {/* Public links */}
       {!token && (
         <>
           <NavLink to="/login" className={({ isActive }) => (isActive ? "active" : "")}>

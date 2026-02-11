@@ -23,17 +23,19 @@ const Login = () => {
         localStorage.setItem("role", data.role);
         localStorage.setItem("email", data.email);
 
-        // ✅ Redirect based on role
+        alert("✅ Login successful!");
+
         if (data.role === "candidate") {
           navigate("/jobs");
         } else if (data.role === "recruiter") {
           navigate("/recruiter-dashboard");
         }
       } else {
-        alert(data.error || "Login failed");
+        alert(data.error || "❌ Login failed");
       }
     } catch (err) {
       console.error("Login error:", err);
+      alert("❌ Something went wrong. Please try again.");
     }
   };
 
