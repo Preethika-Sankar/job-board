@@ -28,12 +28,33 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 
   const { jobId, resumeUrl } = req.body;
+
   try {
+    // Insert application
     const newApp = await pool.query(
-      "INSERT INTO applications (job_id, candidate_id, resume_url, status) VALUES ($1, $2, $3, $4) RETURNING *",
+      `INSERT INTO applications (job_id, candidate_id, resume_url, status)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, job_id, candidate_id, status, applied_at`,
       [jobId, req.user.id, resumeUrl, "Pending"]
     );
-    res.json(newApp.rows[0]);
+
+    // Fetch job details
+    const job = await pool.query(
+      "SELECT title, company, location FROM jobs WHERE id = $1",
+      [jobId]
+    );
+
+    if (job.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    // Merge application + job details
+    const response = {
+      ...newApp.rows[0],
+      ...job.rows[0],
+    };
+
+    res.json(response);
   } catch (err) {
     console.error("🔥 Application error:", err.message);
     res.status(500).json({ error: "Failed to apply" });
@@ -62,7 +83,7 @@ router.get("/me", authenticateToken, async (req, res) => {
   }
 });
 
-// ✅ Recruiter fetches all applications (optional)
+// ✅ Recruiter fetches all applications
 router.get("/", authenticateToken, async (req, res) => {
   if (req.user.role !== "recruiter") {
     return res.status(403).json({ error: "Only recruiters can view applications" });
