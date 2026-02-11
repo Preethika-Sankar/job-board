@@ -97,3 +97,17 @@ button:hover {
 .card p {
   margin: 4px 0;
 }
+.status-selected {
+  color: #4caf50; /* green */
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #f44336; /* red */
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #ff9800; /* orange */
+  font-weight: bold;
+}

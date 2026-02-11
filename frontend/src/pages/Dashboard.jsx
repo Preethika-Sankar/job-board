@@ -8,7 +8,6 @@ const Dashboard = () => {
     const fetchApplications = async () => {
       try {
         const token = localStorage.getItem("token");
-
         const response = await fetch(
           "https://job-board-backend-rhph.onrender.com/api/applications/me",
           {
@@ -21,11 +20,10 @@ const Dashboard = () => {
         );
 
         const data = await response.json();
-
         if (response.ok) {
           setApplications(data);
         } else {
-          alert(data.error || "Failed to fetch applications");
+          console.error("Failed to fetch applications:", data.error);
         }
       } catch (err) {
         console.error("Error fetching applications:", err);
@@ -50,7 +48,9 @@ const Dashboard = () => {
             <li key={app.id}>
               <strong>{app.title}</strong> at {app.company} ({app.location})
               <br />
-              Status: {app.status || "Submitted"}
+              Status: <span className={`status-${app.status?.toLowerCase()}`}>
+                {app.status || "Pending"}
+              </span>
             </li>
           ))}
         </ul>
